@@ -3,7 +3,7 @@ from aiogram import types
 from aiogram.filters import Command
 
 async def test(message: types.Message):
-    await message.answer('Hello, student!')
+    await message.answer('Здравствуйте, студент')
 
 
 def register_student(dp: Dispatcher):
