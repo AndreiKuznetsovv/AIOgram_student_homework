@@ -1,0 +1,15 @@
+# Byte-compiled / optimized
+__pycahce__/
+*.py[cod]
+*$py.class
+
+# pyenv
+.python-version
+
+# Enviroments
+.venv
+venv/
+.env
+env.bak
+
+.idea/*
