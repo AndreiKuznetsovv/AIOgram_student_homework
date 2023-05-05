@@ -7,6 +7,7 @@ class SelectRole(StatesGroup):
     teacher = State()
 
 
+# Класс хранения состояний для регистрации преподавателя
 class RegisterTeacher(StatesGroup):
     teacher_full_name = State()
     teacher_tg_username = State()

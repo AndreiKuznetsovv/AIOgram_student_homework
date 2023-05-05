@@ -33,4 +33,4 @@ def register_general(dp: Dispatcher):
     # command handlers
     dp.message.register(start_command, Command('start'))
     # state handlers
-    dp.message.register(role_chosen, SelectRole.choosing_role)
+    dp.message.register(role_chosen, SelectRole.choosing_role) # Добавить проверку на ContentType
