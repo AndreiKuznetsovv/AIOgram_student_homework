@@ -3,7 +3,10 @@ from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from tg_bot.misc.states import SelectRole
+from tg_bot.misc.states import SelectRole, TaskInteractionTeacher
+from tg_bot.models.models import Teacher
+
+from tg_bot.misc.database import db_session
 
 async def start_command(message: types.Message, state: FSMContext):
     await message.answer(
@@ -23,11 +26,21 @@ async def role_chosen(message: types.Message, state: FSMContext):
             reply_markup=None # изменить позже на student клавиатуру
         )
     elif str(message.text.lower()) == "преподаватель":
-        # Устанавливаем пользователю состояние "Преподаватель"
-        await state.set_state(SelectRole.teacher)
-        await message.answer(
-            text="Введите пароль преподавателя."
-        )
+        username = db_session.query(Teacher).filter(Teacher.tg_username == message.from_user.username).first()
+        if username:
+            await message.answer(
+                text='Вы уже зарегистрированы как преподаватель.\n'
+                     'Можете переходить к работе с заданиями.',
+                reply_markup=None # Заменить позже на teacher клавиатуру
+            )
+            # Установить состояние "преподаватель" чтобы преподаватель мог работать с заданиями
+            await state.set_state(TaskInteractionTeacher.teacher)
+        else:
+            # Устанавливаем пользователю состояние "Преподаватель"
+            await state.set_state(SelectRole.teacher)
+            await message.answer(
+                text="Введите пароль преподавателя."
+            )
 
 def register_general(dp: Dispatcher):
     # command handlers

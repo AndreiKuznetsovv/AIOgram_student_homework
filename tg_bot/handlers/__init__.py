@@ -1,2 +1,2 @@
-from . import student
-from . import teacher
+from . import task_student
+from . import reg_teacher

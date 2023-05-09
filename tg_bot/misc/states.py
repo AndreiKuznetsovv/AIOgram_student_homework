@@ -12,3 +12,12 @@ class RegisterTeacher(StatesGroup):
     teacher_full_name = State()
     teacher_tg_username = State()
 
+
+class TaskInteractionTeacher(StatesGroup):
+    teacher = State()
+    study_group = State()
+    study_subject = State()
+    task_name = State()
+    description = State()
+    upload_file = State()
+

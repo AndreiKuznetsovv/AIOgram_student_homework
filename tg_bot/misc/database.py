@@ -1,9 +1,8 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import scoped_session, sessionmaker, DeclarativeBase
+from sqlalchemy.orm import scoped_session, sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 
-from typing import Union
 
 db_engine = create_engine('postgresql://dron_test:2805@localhost/students_homework')
 db_session = scoped_session(
@@ -11,7 +10,6 @@ db_session = scoped_session(
 )
 
 Base = declarative_base()
-# Base = DeclarativeBase()
 Base.query = db_session.query_property()
 
 def db_init():
@@ -35,4 +33,14 @@ def db_add_func(data: Base) -> bool:
         db_session.rollback()
         return False
     # если session.add отработала, то необходимо закоммитить изменения
+    return db_commit_func()
+
+
+def db_delete_func(data: Base) -> bool:
+    try:
+        db_session.delete(data)
+    except SQLAlchemyError:
+        db_session.rollback()
+        return False
+    # если session.delete отработала, то необходимо закоммитить изменения
     return db_commit_func()

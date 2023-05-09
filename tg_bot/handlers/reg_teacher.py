@@ -4,10 +4,11 @@ from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from tg_bot.config import load_config
-from tg_bot.misc.states import RegisterTeacher, SelectRole
+from tg_bot.misc.states import RegisterTeacher, SelectRole, TaskInteractionTeacher
 
 from tg_bot.models.models import Teacher
-from tg_bot.misc.database import db_add_func
+from tg_bot.misc.database import db_add_func, db_session
+
 
 # перенести работу с конфигом в middleware позже
 config = load_config(".env")
@@ -50,20 +51,31 @@ async def check_teacher_fullname(message: types.Message, state: FSMContext):
         )
 
 
-async def check_teacher_username(message: types.Message, state: FSMContext):
-    # Добавить проверку занят ли такой юзернейм
-    await state.update_data(username=message.text.replace("@", ""))
-    teacher_data = await state.get_data()
-    # Добавить отправку данных в БД
-    teacher = Teacher(full_name=teacher_data['full_name'], tg_username=teacher_data['username'])
-    db_add_func(teacher)
-    # вывод данных на экран для теста
-    serialized_answer = ""
-    for key, value in teacher_data.items():
-        serialized_answer += f"{key}: {value}\n"
-    await message.answer(
-        text=f"{serialized_answer}"
-    )
+async def upload_teacher(message: types.Message, state: FSMContext):
+    username = message.text.replace("@", "")
+    exists = db_session.query(Teacher).filter(Teacher.tg_username == username).first()
+    if exists:
+        await message.answer(
+            text="Преподаватель с таким telegram username уже зарегистрирован!\n"
+                 "Войдите в telegram аккаунт преподавателя для работы с заданиями"
+        )
+        # обнуление состояния пользователя
+        await state.clear()
+    else:
+        await state.update_data(username=username)
+        teacher_data = await state.get_data()
+        new_teacher = Teacher(full_name=teacher_data['full_name'], tg_username=teacher_data['username'])
+        db_add_func(new_teacher)
+        # установка состояния преподавателя
+        await state.set_state(TaskInteractionTeacher.teacher)
+        # вывод данных на экран для теста
+        serialized_answer = ""
+        for key, value in teacher_data.items():
+            serialized_answer += f"{key}: {value}\n"
+        await message.answer(
+            text=f"Преподаватель успешно добавлен!\n"
+                 f"{serialized_answer}"
+        )
 
 
 
@@ -73,4 +85,4 @@ def register_teacher(dp: Dispatcher):
     # state handlers
     dp.message.register(check_teacher_password, SelectRole.teacher)  # Добавить проверку на ContentType
     dp.message.register(check_teacher_fullname, RegisterTeacher.teacher_full_name)  # Добавить проверку на ContentType
-    dp.message.register(check_teacher_username, RegisterTeacher.teacher_tg_username) # Добавить проверку на ContentType
+    dp.message.register(upload_teacher, RegisterTeacher.teacher_tg_username) # Добавить проверку на ContentType
