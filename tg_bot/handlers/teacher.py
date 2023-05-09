@@ -6,6 +6,9 @@ from aiogram.fsm.context import FSMContext
 from tg_bot.config import load_config
 from tg_bot.misc.states import RegisterTeacher, SelectRole
 
+from tg_bot.models.models import Teacher
+from tg_bot.misc.database import db_add_func
+
 # перенести работу с конфигом в middleware позже
 config = load_config(".env")
 
@@ -33,7 +36,7 @@ async def check_teacher_fullname(message: types.Message, state: FSMContext):
     # Проверяем введенное ФИО на наличие 3-ёх слов
     if len(message.text.split()) == 3:
         # кладём full_name преподавателя в словарь MemoryStorage
-        await state.update_data(ful_name=message.text)
+        await state.update_data(full_name=message.text)
         await message.answer(
             text="Введите telegram username преподавателя",
             reply_markup=None  # Позже заменить на kb_inline_back (для перехода на шаг назад)
@@ -52,6 +55,9 @@ async def check_teacher_username(message: types.Message, state: FSMContext):
     await state.update_data(username=message.text.replace("@", ""))
     teacher_data = await state.get_data()
     # Добавить отправку данных в БД
+    teacher = Teacher(full_name=teacher_data['full_name'], tg_username=teacher_data['username'])
+    db_add_func(teacher)
+    # вывод данных на экран для теста
     serialized_answer = ""
     for key, value in teacher_data.items():
         serialized_answer += f"{key}: {value}\n"

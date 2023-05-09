@@ -8,6 +8,7 @@ from tg_bot.handlers.general import register_general
 from tg_bot.handlers.student import register_student
 from tg_bot.handlers.teacher import register_teacher
 
+from tg_bot.misc.database import db_init
 
 def register_all_handlers(dp: Dispatcher):
     register_teacher(dp)
@@ -25,6 +26,8 @@ async def main():
     dp = Dispatcher(bot=bot, storage=storage)
     # register all handlers
     register_all_handlers(dp)
+    # initialize the database
+    db_init()
     # start
     try:
         await bot.delete_webhook(drop_pending_updates=True)
