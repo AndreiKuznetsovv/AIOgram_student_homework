@@ -51,14 +51,23 @@ async def upload_task(message: types.Message, state: FSMContext):
     await state.update_data(description=message.text)
     task_data = await state.get_data()
     new_task = Task(group=task_data['study_group'], subject=task_data['study_subject'],
-                    task_name=task_data['task_name'], description=task_data['description'])
+                    task_name=task_data['task_name'], description=task_data['description'],
+                    teacher_id=task_data['teacher_id'])
     db_add_func(new_task)
+    # загрузим task_id в MemoryStorage, чтобы указать к какому заданию прикрепляются файлы
     await state.update_data(task_id=new_task.id)
     await message.answer(
         text='Задание успешно добавлено!\n'
              'Теперь добавьте файлы к заданию.'
     )
     await state.set_state(TaskInteractionTeacher.upload_file)
+    # вывод данных на экран для теста
+    serialized_answer = ""
+    for key, value in task_data.items():
+        serialized_answer += f"{key}: {value}\n"
+    await message.answer(
+        text=f"{serialized_answer}"
+    )
 
 
 async def upload_files(message: types.Message, state: FSMContext):
@@ -69,7 +78,7 @@ async def upload_files(message: types.Message, state: FSMContext):
     except AttributeError:
         await message.answer(
             text="Файл с данным расширением добавить невозможно.\n"
-                 "Если вы хотите загрузить изображение, не сжимайте его"
+                 "Если вы хотите загрузить изображение, уберите галочку с \"Сжать изображение\""
         )
         return
     db_add_func(new_file)

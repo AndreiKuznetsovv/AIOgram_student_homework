@@ -11,7 +11,8 @@ class Teacher(Base):
     id = Column(Integer, primary_key=True)
     full_name = Column(String(100), nullable=False)
     tg_username = Column(String(100), nullable=False, unique=True)
-
+    # relationship на таблицу Task (тк каждое задание должно быть закреплено за преподавателем)
+    tasks = relationship('Task', passive_deletes=True, lazy=True)
 
 class Task(Base):
     # имя таблицы в postgres
@@ -24,7 +25,8 @@ class Task(Base):
     subject = Column(String(100), nullable=False)
     task_name = Column(String(100), nullable=False)
     description = Column(String(255), nullable=True)
-    # возможно позже будет добавлена колонка owner - foreign key на колонку teacher.id
+    # Внешний ключ на таблицу Teacher
+    teacher_id = Column(ForeignKey('teachers.id', ondelete='CASCADE'), nullable=False)
     # relationship на таблицу File (тк каждый файл должен быть прикреплен к какому-то заданию)
     files = relationship('File', passive_deletes=True, lazy=True)
 

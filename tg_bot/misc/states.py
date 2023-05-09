@@ -21,3 +21,6 @@ class TaskInteractionTeacher(StatesGroup):
     description = State()
     upload_file = State()
 
+class TaskInteractionStudent(StatesGroup):
+    student = State()
+
