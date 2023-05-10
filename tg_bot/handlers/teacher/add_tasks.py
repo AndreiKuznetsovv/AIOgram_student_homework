@@ -3,10 +3,10 @@ from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
+from tg_bot.misc.database import db_add_func
 from tg_bot.misc.states import TaskInteractionTeacher
-
 from tg_bot.models.models import Task, File
-from tg_bot.misc.database import db_add_func, db_session
+
 
 async def request_study_group(message: types.Message, state: FSMContext):
     await message.answer(
@@ -18,7 +18,8 @@ async def request_study_group(message: types.Message, state: FSMContext):
 
 async def check_study_group(message: types.Message, state: FSMContext):
     if len(message.text.split('-')) == 2:
-        await state.update_data(study_group=message.text)
+        # переведем название группы в нижний регистр
+        await state.update_data(study_group=message.text.strip().lower())
         await message.answer(
             text="Введите название предмета.",
             reply_markup=None
@@ -31,8 +32,10 @@ async def check_study_group(message: types.Message, state: FSMContext):
                  "Попробуйте еще раз."
         )
 
+
 async def check_study_subject(message: types.Message, state: FSMContext):
-    await state.update_data(study_subject=message.text)
+    # переведем название предмета в нижний регистр
+    await state.update_data(study_subject=message.text.strip().lower())
     await message.answer(
         text="Введите название задания."
     )
@@ -40,7 +43,8 @@ async def check_study_subject(message: types.Message, state: FSMContext):
 
 
 async def check_task_name(message: types.Message, state: FSMContext):
-    await state.update_data(task_name=message.text)
+    # переведем название задания в нижний регистр
+    await state.update_data(task_name=message.text.strip().lower())
     await message.answer(
         text="Введите описание задания."
     )
@@ -48,7 +52,7 @@ async def check_task_name(message: types.Message, state: FSMContext):
 
 
 async def upload_task(message: types.Message, state: FSMContext):
-    await state.update_data(description=message.text)
+    await state.update_data(description=message.text.strip())
     task_data = await state.get_data()
     new_task = Task(group=task_data['study_group'], subject=task_data['study_subject'],
                     task_name=task_data['task_name'], description=task_data['description'],
@@ -86,27 +90,14 @@ async def upload_files(message: types.Message, state: FSMContext):
         text='Файл успешно добавлен!\n'
              'Вы можете продолжить добавление файлов!\n'
              'Или ввести команду /cancel чтобы закончить добавление файлов.',
-        reply_markup=None # reply клавиатура с командой cancel
+        reply_markup=None  # reply клавиатура с командой cancel
     )
 
 
-async def command_cancel(message: types.Message, state: FSMContext):
-    """
-    Позволяет пользователю отменить любое действие
-    """
-    current_state = await state.get_state()
-    if current_state is None:
-        return
-
-    await state.clear()
-    await message.reply('Отмена произошла успешно!')
-
-
 def register_task_teacher(dp: Dispatcher):
-    # cancel handler
-    dp.message.register(command_cancel, Command('cancel'))
     # state handlers
-    dp.message.register(request_study_group, Command('tasks'), TaskInteractionTeacher.teacher) # Добавить проверку на ContentType
+    dp.message.register(request_study_group, Command('add_task'),
+                        TaskInteractionTeacher.teacher)  # Добавить проверку на ContentType
     dp.message.register(check_study_group, TaskInteractionTeacher.study_group)
     dp.message.register(check_study_subject, TaskInteractionTeacher.study_subject)
     dp.message.register(check_task_name, TaskInteractionTeacher.task_name)

@@ -23,4 +23,8 @@ class TaskInteractionTeacher(StatesGroup):
 
 class TaskInteractionStudent(StatesGroup):
     student = State()
+    teacher_full_name = State()
+    study_group = State()
+    study_subject = State()
+    task_name = State()
 

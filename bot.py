@@ -5,16 +5,16 @@ from aiogram.fsm.storage.memory import MemoryStorage
 
 from tg_bot.config import load_config
 from tg_bot.handlers.general import register_general
-from tg_bot.handlers.task_student import register_student
-from tg_bot.handlers.reg_teacher import register_teacher
-from tg_bot.handlers.task_teacher import register_task_teacher
+from tg_bot.handlers.student.select_tasks import register_student
+from tg_bot.handlers.teacher.register import register_teacher
+from tg_bot.handlers.teacher.add_tasks import register_task_teacher
 
 from tg_bot.misc.database import db_init
 
 def register_all_handlers(dp: Dispatcher):
+    register_general(dp)
     register_teacher(dp)
     register_student(dp)
-    register_general(dp)
     register_task_teacher(dp)
 
 

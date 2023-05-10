@@ -34,8 +34,8 @@ async def check_teacher_password(message: types.Message, state: FSMContext):
 async def check_teacher_fullname(message: types.Message, state: FSMContext):
     # Проверяем введенное ФИО на наличие 3-ёх слов
     if len(message.text.split()) == 3:
-        # кладём full_name преподавателя в словарь MemoryStorage
-        await state.update_data(full_name=message.text)
+        # переводим full_name в нижний регистр и кладем в словарь MemoryStorage
+        await state.update_data(full_name=message.text.lower())
         await message.answer(
             text="Введите telegram username преподавателя",
             reply_markup=None  # Позже заменить на kb_inline_back (для перехода на шаг назад)

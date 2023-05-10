@@ -7,6 +7,12 @@ from tg_bot.misc.database import db_session
 from tg_bot.misc.states import SelectRole, TaskInteractionTeacher, TaskInteractionStudent
 from tg_bot.models.models import Teacher
 
+'''
+В данном файле будут описаны:
+**Старт диалога с пользователем /start
+**Вспомогательная команда /help (пока не реализована)
+'''
+
 
 async def start_command(message: types.Message, state: FSMContext):
     await message.answer(
@@ -46,7 +52,21 @@ async def role_chosen(message: types.Message, state: FSMContext):
             )
 
 
+async def command_cancel(message: types.Message, state: FSMContext):
+    """
+    Позволяет пользователю отменить любое действие
+    """
+    current_state = await state.get_state()
+    if current_state is None:
+        return
+
+    await state.clear()
+    await message.reply('Отмена произошла успешно!')
+
+
 def register_general(dp: Dispatcher):
+    # cancel handler
+    dp.message.register(command_cancel, Command('cancel'))
     # command handlers
     dp.message.register(start_command, Command('start'))
     # state handlers
