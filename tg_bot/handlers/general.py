@@ -20,6 +20,8 @@ from tg_bot.models.models import Teacher, Student, User
 
 
 async def start_command(message: types.Message, state: FSMContext):
+    # если пользователь ввел команду находясь в каком-то состоянии - сбросим его
+    await state.clear()
     await message.answer(
         text="Здравствуйте, вы преподаватель или студент?",
         reply_markup=create_general_kb()
@@ -40,7 +42,7 @@ async def student_role(message: types.Message, state: FSMContext):
         # Установить состояние "преподаватель" чтобы преподаватель мог работать с заданиями
         await state.set_state(TaskInteractionStudent.student)
         # Запишем id преподавателя из базы данных в MemoryStorage
-        await state.update_data(student_id=student.id)
+        await state.update_data(student_id=student.id, group_id=student.group_id)
     else:
         # Устанавливаем пользователю состояние регистрации нового преподавателя
         await state.set_state(RegisterStudent.student_full_name)

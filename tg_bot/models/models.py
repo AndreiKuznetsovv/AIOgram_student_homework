@@ -27,7 +27,7 @@ class Teacher(Base):
     # relationship на таблицу User
     user = relationship('User', back_populates='teacher', passive_deletes=True)
     # relationship на таблицу TeacherSubject
-    teachers_subjects = relationship('TeacherSubject', back_populates='teacher', passive_deletes=True)
+    teachers_subjects = relationship('TeacherSubject', back_populates='teachers', passive_deletes=True)
     # relationship на таблицу Task
     tasks = relationship('Task', back_populates='teacher', passive_deletes=True)
 
@@ -42,7 +42,7 @@ class Student(Base):
     # relationship на таблицу User
     user = relationship('User', back_populates='student', passive_deletes=True)
     # relationship на таблицу Group
-    group = relationship('Group', back_populates='student', passive_deletes=True)
+    group = relationship('Group', back_populates='students', passive_deletes=True)
     # relationship на таблицу Answer (ответы на задание)
     answers = relationship('Answer', back_populates='student', passive_deletes=True)
 
@@ -53,9 +53,9 @@ class Subject(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(100), nullable=False, unique=True)
     # relationship на таблицу TeacherSubjectGroupSubject
-    teachers_subjects = relationship('TeacherSubject', back_populates='subject', passive_deletes=True)
+    teachers_subjects = relationship('TeacherSubject', back_populates='subjects', passive_deletes=True)
     # relationship на таблицу GroupSubject
-    groups_subjects = relationship('GroupSubject', back_populates='subject', passive_deletes=True)
+    groups_subjects = relationship('GroupSubject', back_populates='subjects', passive_deletes=True)
     # relationship на таблицу Task
     tasks = relationship('Task', back_populates='subject', passive_deletes=True)
 
@@ -84,7 +84,7 @@ class Group(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String(10), unique=True, nullable=False)
     # relationship на таблицу GroupSubject
-    groups_subjects = relationship('GroupSubject', back_populates='group', passive_deletes=True)
+    groups_subjects = relationship('GroupSubject', back_populates='groups', passive_deletes=True)
     # relationship на таблицу Student
     students = relationship('Student', back_populates='group', passive_deletes=True)
     # relationship на таблицу Task
@@ -102,9 +102,9 @@ class GroupSubject(Base):
     group_id = Column(Integer, ForeignKey('groups.id', ondelete='CASCADE'), nullable=False)
     subject_id = Column(Integer, ForeignKey('subjects.id', ondelete='CASCADE'), nullable=False)
     # relationship на таблицу Group
-    group = relationship('Group', back_populates='groups_subjects', passive_deletes=True)
+    groups = relationship('Group', back_populates='groups_subjects', passive_deletes=True)
     # relationship на таблицу Subject
-    subject = relationship('Subject', back_populates='groups_subjects', passive_deletes=True)
+    subjects = relationship('Subject', back_populates='groups_subjects', passive_deletes=True)
 
 
 class Task(Base):

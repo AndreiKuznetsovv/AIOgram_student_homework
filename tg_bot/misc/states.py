@@ -13,12 +13,13 @@ class RegisterTeacher(StatesGroup):
 
 class RegisterStudent(StatesGroup):
     student_full_name = State()
+    student_study_group = State()
 
 
 class TaskInteractionTeacher(StatesGroup):
     teacher = State()
-    study_group = State()
     study_subject = State()
+    study_group = State()
     task_name = State()
     description = State()
     upload_file = State()
@@ -26,7 +27,6 @@ class TaskInteractionTeacher(StatesGroup):
 
 class TaskInteractionStudent(StatesGroup):
     student = State()
-    teacher_full_name = State()
-    study_group = State()
     study_subject = State()
+    teacher_full_name = State()
     task_name = State()

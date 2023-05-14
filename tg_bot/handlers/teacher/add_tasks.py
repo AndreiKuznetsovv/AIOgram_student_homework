@@ -3,28 +3,71 @@ from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from tg_bot.misc.database import db_add_func
+from tg_bot.keyboards.reply import create_cancel_keyboard
+from tg_bot.misc.database import db_add_func, db_session
 from tg_bot.misc.states import TaskInteractionTeacher
-from tg_bot.models.models import Task, File
+from tg_bot.models.models import Task, File, Group, Subject, GroupSubject, TeacherSubject
 
 
-async def request_study_group(message: types.Message, state: FSMContext):
+
+'''
+Изменить добавление данных!!
+Добавлять их не по мере, а в конце!!
+'''
+
+
+async def request_subject(message: types.Message, state: FSMContext):
+    # установим состояние и запросим название предмета
+    await state.set_state(TaskInteractionTeacher.study_subject)
     await message.answer(
-        text="Введите название группы, с заданиями которой хотите взаимодействовать.",
-        reply_markup=None
+        text="Введите название предмета, по которому хотите добавить задание.",
+        reply_markup=create_cancel_keyboard()
     )
+
+
+async def request_group(message: types.Message, state: FSMContext):
+    # проверим, существует ли такой предмет (если нет - добавим)
+    subject = db_session.query(Subject).filter_by(name=message.text.lower()).first()
+    if not subject:
+        subject = Subject(name=message.text.lower())
+        db_add_func(subject)
+    # Добавим в MemoryStorage id предмета
+    await state.update_data(subject_id=subject.id)
+
+    # Добавим отношение учитель - предмет
+    data = await state.get_data()
+    teacher_subject = TeacherSubject(teacher_id=data['teacher_id'], subject_id=subject.id)
+    db_add_func(teacher_subject)
+
+    # установим состояние и запросим название группы
     await state.set_state(TaskInteractionTeacher.study_group)
+    await message.answer(
+        text="Введите название группы, для которой вы хотите добавить задание.",
+        reply_markup=create_cancel_keyboard()
+    )
 
 
-async def check_study_group(message: types.Message, state: FSMContext):
+async def request_task_name(message: types.Message, state: FSMContext):
     if len(message.text.split('-')) == 2:
-        # переведем название группы в нижний регистр
-        await state.update_data(study_group=message.text.strip().lower())
+        # проверим, существует ли такая группа (если нет - добавим)
+        group = db_session.query(Group).filter_by(name=message.text.lower()).first()
+        if not group:
+            group = Group(name=message.text.lower())
+            db_add_func(group)
+        # Добавим в MemoryStorage id группы
+        await state.update_data(group_id=group.id)
+
+        # добавим отношение - группа предмет
+        data = await state.get_data()
+        group_subject = GroupSubject(group_id=group.id, subject_id=data['subject_id'])
+        db_add_func(group_subject)
+
+        # установим состояние и запросим название задания
+        await state.set_state(TaskInteractionTeacher.task_name)
         await message.answer(
-            text="Введите название предмета.",
-            reply_markup=None
+            text="Введите название задания.",
         )
-        await state.set_state(TaskInteractionTeacher.study_subject)
+        # если название группы было введено некорректно
     else:
         await message.answer(
             text="Вы ввели неверное название группы.\n"
@@ -33,38 +76,47 @@ async def check_study_group(message: types.Message, state: FSMContext):
         )
 
 
-async def check_study_subject(message: types.Message, state: FSMContext):
-    # переведем название предмета в нижний регистр
-    await state.update_data(study_subject=message.text.strip().lower())
-    await message.answer(
-        text="Введите название задания."
-    )
-    await state.set_state(TaskInteractionTeacher.task_name)
+async def request_description(message: types.Message, state: FSMContext):
+    # Запишем название предмета в MemoryStorage
+    await state.update_data(task_name=message.text.lower())
 
-
-async def check_task_name(message: types.Message, state: FSMContext):
-    # переведем название задания в нижний регистр
-    await state.update_data(task_name=message.text.strip().lower())
+    # Установим состояние и запросим описание задания
+    await state.set_state(TaskInteractionTeacher.description)
     await message.answer(
         text="Введите описание задания."
     )
-    await state.set_state(TaskInteractionTeacher.description)
 
 
 async def upload_task(message: types.Message, state: FSMContext):
-    await state.update_data(description=message.text.strip())
+    # Запишем описание задания в MemoryStorage
+    await state.update_data(description=message.text)
+
+    # Получим все данные из MemoryStorage
     task_data = await state.get_data()
-    new_task = Task(group=task_data['study_group'], subject=task_data['study_subject'],
-                    task_name=task_data['task_name'], description=task_data['description'],
-                    teacher_id=task_data['teacher_id'])
+
+    # Создадим новый объект класса Task и сохраним его в БД
+    new_task = Task(
+        subject_id=task_data['subject_id'],
+        group_id=task_data['group_id'],
+        teacher_id=task_data['teacher_id'],
+        name=task_data['task_name'],
+        description=task_data['description'],
+    )
     db_add_func(new_task)
+
+    # Очистим MemoryStorage
+    await state.set_data({})
+
     # загрузим task_id в MemoryStorage, чтобы указать к какому заданию прикрепляются файлы
     await state.update_data(task_id=new_task.id)
+
+    # Установим состояние и запросим добавление файлов
+    await state.set_state(TaskInteractionTeacher.upload_file)
     await message.answer(
         text='Задание успешно добавлено!\n'
              'Теперь добавьте файлы к заданию.'
     )
-    await state.set_state(TaskInteractionTeacher.upload_file)
+
     # вывод данных на экран для теста
     serialized_answer = ""
     for key, value in task_data.items():
@@ -75,7 +127,10 @@ async def upload_task(message: types.Message, state: FSMContext):
 
 
 async def upload_files(message: types.Message, state: FSMContext):
+    # Получим все данные из MemoryStorage
     task_data = await state.get_data()
+
+    # Добавим файл в БД (с проверкой на расширение файла)
     try:
         new_file = File(code=message.document.file_id, task_id=task_data['task_id'])
         db_add_func(new_file)
@@ -86,6 +141,8 @@ async def upload_files(message: types.Message, state: FSMContext):
         )
         return
     db_add_func(new_file)
+
+    # Проинструктируем преподавателя
     await message.answer(
         text='Файл успешно добавлен!\n'
              'Вы можете продолжить добавление файлов!\n'
@@ -94,12 +151,12 @@ async def upload_files(message: types.Message, state: FSMContext):
     )
 
 
-def register_task_teacher(dp: Dispatcher):
+def register_teacher_add_task(dp: Dispatcher):
     # state handlers
-    dp.message.register(request_study_group, Command('add_task'),
+    dp.message.register(request_subject, Command('add_task', ignore_case=True),
                         TaskInteractionTeacher.teacher)  # Добавить проверку на ContentType
-    dp.message.register(check_study_group, TaskInteractionTeacher.study_group)
-    dp.message.register(check_study_subject, TaskInteractionTeacher.study_subject)
-    dp.message.register(check_task_name, TaskInteractionTeacher.task_name)
+    dp.message.register(request_group, TaskInteractionTeacher.study_subject)
+    dp.message.register(request_task_name, TaskInteractionTeacher.study_group)
+    dp.message.register(request_description, TaskInteractionTeacher.task_name)
     dp.message.register(upload_task, TaskInteractionTeacher.description)
     dp.message.register(upload_files, TaskInteractionTeacher.upload_file)
