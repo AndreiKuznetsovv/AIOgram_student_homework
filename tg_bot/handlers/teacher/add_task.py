@@ -5,10 +5,12 @@ from aiogram.fsm.context import FSMContext
 
 from tg_bot.keyboards.reply import create_cancel_keyboard
 from tg_bot.misc.database import db_add_func, db_session
-from tg_bot.misc.states import TaskInteractionTeacher
-from tg_bot.models.models import Task, File, Group, Subject, GroupSubject, TeacherSubject
-
-
+from tg_bot.misc.states import AddTaskTeacher, SelectRole
+from tg_bot.models.models import (
+    Task, File, Group,
+    Subject, GroupSubject, TeacherSubject,
+    TaskFile,
+)
 
 '''
 Изменить добавление данных!!
@@ -18,7 +20,7 @@ from tg_bot.models.models import Task, File, Group, Subject, GroupSubject, Teach
 
 async def request_subject(message: types.Message, state: FSMContext):
     # установим состояние и запросим название предмета
-    await state.set_state(TaskInteractionTeacher.study_subject)
+    await state.set_state(AddTaskTeacher.study_subject)
     await message.answer(
         text="Введите название предмета, по которому хотите добавить задание.",
         reply_markup=create_cancel_keyboard()
@@ -40,7 +42,7 @@ async def request_group(message: types.Message, state: FSMContext):
     db_add_func(teacher_subject)
 
     # установим состояние и запросим название группы
-    await state.set_state(TaskInteractionTeacher.study_group)
+    await state.set_state(AddTaskTeacher.study_group)
     await message.answer(
         text="Введите название группы, для которой вы хотите добавить задание.",
         reply_markup=create_cancel_keyboard()
@@ -63,7 +65,7 @@ async def request_task_name(message: types.Message, state: FSMContext):
         db_add_func(group_subject)
 
         # установим состояние и запросим название задания
-        await state.set_state(TaskInteractionTeacher.task_name)
+        await state.set_state(AddTaskTeacher.task_name)
         await message.answer(
             text="Введите название задания.",
         )
@@ -81,7 +83,7 @@ async def request_description(message: types.Message, state: FSMContext):
     await state.update_data(task_name=message.text.lower())
 
     # Установим состояние и запросим описание задания
-    await state.set_state(TaskInteractionTeacher.description)
+    await state.set_state(AddTaskTeacher.description)
     await message.answer(
         text="Введите описание задания."
     )
@@ -111,7 +113,7 @@ async def upload_task(message: types.Message, state: FSMContext):
     await state.update_data(task_id=new_task.id)
 
     # Установим состояние и запросим добавление файлов
-    await state.set_state(TaskInteractionTeacher.upload_file)
+    await state.set_state(AddTaskTeacher.upload_file)
     await message.answer(
         text='Задание успешно добавлено!\n'
              'Теперь добавьте файлы к заданию.'
@@ -132,8 +134,10 @@ async def upload_files(message: types.Message, state: FSMContext):
 
     # Добавим файл в БД (с проверкой на расширение файла)
     try:
-        new_file = File(code=message.document.file_id, task_id=task_data['task_id'])
+        new_file = File(code=message.document.file_id)
         db_add_func(new_file)
+        new_task_file = TaskFile(file_id=new_file.id, task_id=task_data['task_id'])
+        db_add_func(new_task_file)
     except AttributeError:
         await message.answer(
             text="Файл с данным расширением добавить невозможно.\n"
@@ -154,9 +158,9 @@ async def upload_files(message: types.Message, state: FSMContext):
 def register_teacher_add_task(dp: Dispatcher):
     # state handlers
     dp.message.register(request_subject, Command('add_task', ignore_case=True),
-                        TaskInteractionTeacher.teacher)  # Добавить проверку на ContentType
-    dp.message.register(request_group, TaskInteractionTeacher.study_subject)
-    dp.message.register(request_task_name, TaskInteractionTeacher.study_group)
-    dp.message.register(request_description, TaskInteractionTeacher.task_name)
-    dp.message.register(upload_task, TaskInteractionTeacher.description)
-    dp.message.register(upload_files, TaskInteractionTeacher.upload_file)
+                        SelectRole.teacher)  # Добавить проверку на ContentType
+    dp.message.register(request_group, AddTaskTeacher.study_subject)
+    dp.message.register(request_task_name, AddTaskTeacher.study_group)
+    dp.message.register(request_description, AddTaskTeacher.task_name)
+    dp.message.register(upload_task, AddTaskTeacher.description)
+    dp.message.register(upload_files, AddTaskTeacher.upload_file)

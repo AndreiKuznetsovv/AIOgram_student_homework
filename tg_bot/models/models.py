@@ -46,6 +46,7 @@ class Student(Base):
     # relationship на таблицу Answer (ответы на задание)
     answers = relationship('Answer', back_populates='student', passive_deletes=True)
 
+
 class Subject(Base):
     # имя таблицы в postgres
     __tablename__ = "subjects"
@@ -126,9 +127,10 @@ class Task(Base):
     subject = relationship('Subject', back_populates='tasks', passive_deletes=True)
     teacher = relationship('Teacher', back_populates='tasks', passive_deletes=True)
     # relationship на таблицу File (тк каждый файл должен быть прикреплен к какому-то заданию)
-    files = relationship('File', back_populates='task', passive_deletes=True)
+    task_files = relationship('TaskFile', back_populates='task', passive_deletes=True)
     # relationship на таблицу Answer (ответы на задание)
     answers = relationship('Answer', back_populates='task', passive_deletes=True)
+
 
 class File(Base):
     # имя таблицы в postgres
@@ -136,10 +138,38 @@ class File(Base):
 
     id = Column(Integer, primary_key=True)
     code = Column(String(255), nullable=False)
+    # relationship на таблицу Teacher
+    task_file = relationship('TaskFile', back_populates='file', passive_deletes=True)
+    # relationship на таблицу Student
+    answer_file = relationship('AnswerFile', back_populates='file', passive_deletes=True)
+
+
+class TaskFile(Base):
+    # имя таблицы в postgres
+    __tablename__ = "task_files"
+
+    id = Column(Integer, primary_key=True)
+    file_id = Column(Integer, ForeignKey('files.id', ondelete='CASCADE'), nullable=False, unique=True)
     # Внешний ключ на таблицу Task
-    task_id = Column(ForeignKey('tasks.id', ondelete='CASCADE'), nullable=False)
-    # relationship на таблицу File (тк каждый файл должен быть прикреплен к какому-то заданию)
-    task = relationship('Task', back_populates='files', passive_deletes=True)
+    task_id = Column(Integer, ForeignKey('tasks.id', ondelete='CASCADE'), nullable=False)
+    # relationship на таблицу File
+    file = relationship('File', back_populates='task_file', passive_deletes=True)
+    # relationship на таблицу File (тк каждый файл должен быть прикреплен к какому-то заданию/ответу на задание)
+    task = relationship('Task', back_populates='task_files', passive_deletes=True)
+
+
+class AnswerFile(Base):
+    # имя таблицы в postgres
+    __tablename__ = "answer_files"
+
+    id = Column(Integer, primary_key=True)
+    file_id = Column(Integer, ForeignKey('files.id', ondelete='CASCADE'), nullable=False, unique=True)
+    # Внешний ключ на таблицу Answer
+    answer_id = Column(Integer, ForeignKey('answers.id', ondelete='CASCADE'), nullable=False)
+    # relationship на таблицу File
+    file = relationship('File', back_populates='answer_file', passive_deletes=True)
+    # relationship на таблицу Answer (тк каждый файл должен быть прикреплен к какому-то заданию/ответу на задание)
+    answer = relationship('Answer', back_populates='answer_files', passive_deletes=True)
 
 
 class Answer(Base):
@@ -149,11 +179,13 @@ class Answer(Base):
     id = Column(Integer, primary_key=True)
     description = Column(String(255), nullable=True)
     # foreign keys
-    task_id = Column(ForeignKey('tasks.id', ondelete='CASCADE'), nullable=False)
-    student_id = Column(ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
+    task_id = Column(Integer, ForeignKey('tasks.id', ondelete='CASCADE'), nullable=False)
+    student_id = Column(Integer, ForeignKey('students.id', ondelete='CASCADE'), nullable=False)
     # relationships
     task = relationship('Task', back_populates='answers', passive_deletes=True)
     student = relationship('Student', back_populates='answers', passive_deletes=True)
+    # relationship на таблицу AnswerFile (тк к каждому ответу могут быть прикреплены файлы)
+    answer_files = relationship('AnswerFile', back_populates='answer', passive_deletes=True)
     # каждый ответ может быть оценен
     mark = relationship('Mark', back_populates='answer', passive_deletes=True)
 
@@ -163,9 +195,9 @@ class Mark(Base):
     __tablename__ = "marks"
 
     id = Column(Integer, primary_key=True)
-    mark = Column(Integer, primary_key=True)
+    mark = Column(Integer, nullable=False)
     description = Column(String(255), nullable=True)
     # foreign key
-    answer_id = Column(ForeignKey('answers.id', ondelete='CASCADE'), nullable=False)
+    answer_id = Column(Integer, ForeignKey('answers.id', ondelete='CASCADE'), nullable=False)
     # relationship
     answer = relationship('Answer', back_populates='mark', passive_deletes=True)

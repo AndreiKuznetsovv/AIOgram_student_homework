@@ -2,9 +2,9 @@ from aiogram import Dispatcher
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
-from tg_bot.misc.database import db_add_func, db_session, db_commit_func
-from tg_bot.misc.states import TaskInteractionStudent, RegisterStudent
-from tg_bot.models.models import Teacher, Student, User, Group
+from tg_bot.misc.database import db_add_func, db_session
+from tg_bot.misc.states import SelectRole, RegisterStudent
+from tg_bot.models.models import Student, User, Group
 
 
 async def check_student_fullname(message: types.Message, state: FSMContext):
@@ -23,7 +23,7 @@ async def check_student_fullname(message: types.Message, state: FSMContext):
         )
 
 
-async def check_student_group(message: types.Message, state : FSMContext):
+async def check_student_group(message: types.Message, state: FSMContext):
     if len(message.text.split('-')) == 2:
         group = db_session.query(Group).filter_by(name=message.text.lower()).first()
         if not group:
@@ -51,7 +51,7 @@ async def check_student_group(message: types.Message, state : FSMContext):
         # Запишем id студента из базы данных в MemoryStorage
         await state.update_data(student_id=new_student.id)
         # установка состояния студента
-        await state.set_state(TaskInteractionStudent.student)
+        await state.set_state(SelectRole.student)
         # вывод данных на экран для теста
         serialized_answer = ""
         for key, value in student_data.items():
@@ -60,6 +60,7 @@ async def check_student_group(message: types.Message, state : FSMContext):
             text=f"Студент успешно добавлен!\n"
                  f"{serialized_answer}"
         )
+
 
 def register_student(dp: Dispatcher):
     # state handlers

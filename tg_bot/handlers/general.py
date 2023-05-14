@@ -5,11 +5,9 @@ from aiogram.fsm.context import FSMContext
 
 from tg_bot.keyboards.reply import (
     create_general_kb,
-    create_student_select_kb,
-    create_teacher_add_kb,
 )
 from tg_bot.misc.database import db_session
-from tg_bot.misc.states import SelectRole, TaskInteractionTeacher, TaskInteractionStudent, RegisterTeacher, RegisterStudent
+from tg_bot.misc.states import SelectRole, RegisterTeacher, RegisterStudent
 from tg_bot.models.models import Teacher, Student, User
 
 '''
@@ -37,10 +35,10 @@ async def student_role(message: types.Message, state: FSMContext):
         await message.answer(
             text='Вы уже зарегистрированы как студент.\n'
                  'Можете переходить к работе с заданиями.',
-            reply_markup=None # Заменить позже на student клавиатуру
+            reply_markup=None  # Заменить позже на student клавиатуру
         )
         # Установить состояние "преподаватель" чтобы преподаватель мог работать с заданиями
-        await state.set_state(TaskInteractionStudent.student)
+        await state.set_state(SelectRole.student)
         # Запишем id преподавателя из базы данных в MemoryStorage
         await state.update_data(student_id=student.id, group_id=student.group_id)
     else:
@@ -49,7 +47,7 @@ async def student_role(message: types.Message, state: FSMContext):
         # поместим tg_username в MemoryStorage (понадобится в дальнейшем для регистрации)
         await state.update_data(tg_username=message.from_user.username)
         await message.answer(
-            text="Введите полное ФИО студента."
+            text="Введите ФИО студента."
         )
 
 
@@ -63,7 +61,7 @@ async def teacher_role(message: types.Message, state: FSMContext):
             reply_markup=None  # Заменить позже на teacher клавиатуру
         )
         # Установить состояние "преподаватель" чтобы преподаватель мог работать с заданиями
-        await state.set_state(TaskInteractionTeacher.teacher)
+        await state.set_state(SelectRole.teacher)
         # Запишем id преподавателя из базы данных в MemoryStorage
         await state.update_data(teacher_id=teacher.id)
     else:

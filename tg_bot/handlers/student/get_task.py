@@ -5,14 +5,19 @@ from aiogram.fsm.context import FSMContext
 
 from tg_bot.keyboards.reply import create_cancel_keyboard
 from tg_bot.misc.database import db_session
-from tg_bot.misc.states import TaskInteractionStudent
-from tg_bot.models.models import Task, File, Teacher, User, GroupSubject, Subject, TeacherSubject, Group, Student
+from tg_bot.misc.states import GetTaskStudent, SelectRole
+from tg_bot.models.models import (
+    Task, File, Teacher,
+    User, GroupSubject, Subject,
+    TeacherSubject, TaskFile,
+)
+
 
 # from sqlalchemy import and_
 
 async def select_subject(message: types.Message, state: FSMContext):
     # Установим состояние и запросим название предмета
-    await state.set_state(TaskInteractionStudent.study_subject)
+    await state.set_state(GetTaskStudent.study_subject)
     await message.answer(
         text="Введите название предмета.",
         reply_markup=create_cancel_keyboard()
@@ -33,7 +38,7 @@ async def select_teacher(message: types.Message, state: FSMContext):
         await state.update_data(subject_id=subject_group.subject_id)
 
         # Установим состояние и запросим ФИО преподавателя
-        await state.set_state(TaskInteractionStudent.teacher_full_name)
+        await state.set_state(GetTaskStudent.teacher_full_name)
         await message.answer(
             text="Введите ФИО преподавателя."
         )
@@ -56,14 +61,12 @@ async def select_task_name(message: types.Message, state: FSMContext):
             User.full_name == message.text.lower(),
             TeacherSubject.subject_id == data['subject_id']
         ).first()
-        # Тест
-        print(teacher.teachers_subjects,'\n',teacher.tasks)
         if teacher:
             # Добавим в MemoryStorage id преподавателя
             await state.update_data(teacher_id=teacher.id)
 
             # установим состояние и запросим название задания
-            await state.set_state(TaskInteractionStudent.task_name)
+            await state.set_state(GetTaskStudent.task_name)
             await message.answer(
                 text="Введите название задания.",
                 reply_markup=create_cancel_keyboard()  # Добавить клавиатуру для выбора группы
@@ -71,7 +74,7 @@ async def select_task_name(message: types.Message, state: FSMContext):
         else:
             await message.answer(
                 text="Преподавателя с таким ФИО не существует\n"
-                     "или он не преподает выбранный предмет."
+                     "или он не добавил заданий по выбранному предмету."
                      "Попробуйте ввести ФИО преподавателя еще раз."
             )
     else:
@@ -97,7 +100,7 @@ async def show_selected_task(message: types.Message, state: FSMContext):
     ).first()
 
     # получим прикрепленные к заданию файлы
-    task_files = db_session.query(File).filter_by(task_id=selected_task.id).all()
+    task_files = db_session.query(File).join(TaskFile).filter(TaskFile.task_id == selected_task.id).all()
 
     # если файлов > 1 отправляем группу документов, иначе 1 документ
     if len(task_files) > 1:
@@ -119,8 +122,8 @@ async def show_selected_task(message: types.Message, state: FSMContext):
 
 def register_student_select_task(dp: Dispatcher):
     # Command handlers
-    dp.message.register(select_subject, Command('select_task', ignore_case=True),TaskInteractionStudent.student)
+    dp.message.register(select_subject, Command('select_task', ignore_case=True), SelectRole.student)
     # state handlers
-    dp.message.register(select_teacher, TaskInteractionStudent.study_subject)
-    dp.message.register(select_task_name, TaskInteractionStudent.teacher_full_name)
-    dp.message.register(show_selected_task, TaskInteractionStudent.task_name)
+    dp.message.register(select_teacher, GetTaskStudent.study_subject)
+    dp.message.register(select_task_name, GetTaskStudent.teacher_full_name)
+    dp.message.register(show_selected_task, GetTaskStudent.task_name)

@@ -1,19 +1,14 @@
 from aiogram import Dispatcher
 from aiogram import types
-from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
 from tg_bot.config import load_config
 from tg_bot.misc.database import db_add_func, db_session
-from tg_bot.misc.states import RegisterTeacher, SelectRole, TaskInteractionTeacher
+from tg_bot.misc.states import RegisterTeacher, SelectRole
 from tg_bot.models.models import Teacher, User
 
 # перенести работу с конфигом в middleware позже
 config = load_config(".env")
-
-
-async def test(message: types.Message):
-    await message.answer('Здравствуйте, учитель!')
 
 
 async def check_teacher_password(message: types.Message, state: FSMContext):
@@ -56,7 +51,7 @@ async def upload_teacher(message: types.Message, state: FSMContext):
             db_add_func(new_teacher)
 
         # установка состояния преподавателя
-        await state.set_state(TaskInteractionTeacher.teacher)
+        await state.set_state(SelectRole.teacher)
 
         # Запишем id преподавателя из базы данных в MemoryStorage
         await state.update_data(teacher_id=new_teacher.id)
@@ -77,8 +72,6 @@ async def upload_teacher(message: types.Message, state: FSMContext):
 
 
 def register_teacher(dp: Dispatcher):
-    # command handlers
-    dp.message.register(test, Command('test_teacher'))
     # state handlers
     dp.message.register(check_teacher_password, RegisterTeacher.teacher_password)  # Добавить проверку на ContentType
     dp.message.register(upload_teacher, RegisterTeacher.teacher_full_name)  # Добавить проверку на ContentType
