@@ -13,8 +13,6 @@ from tg_bot.models.models import (
 )
 
 
-# from sqlalchemy import and_
-
 async def select_subject(message: types.Message, state: FSMContext):
     # Установим состояние и запросим название предмета
     await state.set_state(GetTaskStudent.study_subject)
@@ -74,7 +72,7 @@ async def select_task_name(message: types.Message, state: FSMContext):
         else:
             await message.answer(
                 text="Преподавателя с таким ФИО не существует\n"
-                     "или он не добавил заданий по выбранному предмету."
+                     "или он не добавил заданий по выбранному предмету.\n"
                      "Попробуйте ввести ФИО преподавателя еще раз."
             )
     else:

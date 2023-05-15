@@ -26,6 +26,15 @@ class AddTaskTeacher(StatesGroup):
     upload_file = State()
 
 
+class GetAnswersTeacher(StatesGroup):
+    study_subject = State()
+    study_group = State()
+    task_name = State()
+
+
+class RateAnswerTeacher(StatesGroup):
+    pass
+
 '''
 Student StateGroup classes
 '''
