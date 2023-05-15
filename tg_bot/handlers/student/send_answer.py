@@ -100,6 +100,17 @@ async def request_description(message: types.Message, state: FSMContext):
         )
 
 
+'''
+Обработчик перехода из get_task
+'''
+async def request_description_external(message: types.Message, state: FSMContext):
+    # Установим состояние и запросим описание ответа на задание
+    await state.set_state(SendAnswerStudent.description)
+    await message.answer(
+        text="Введите описание вашего ответа/решения, которое вы собираетесь отправить преподавателю."
+    )
+
+
 async def send_answer(message: types.Message, state: FSMContext):
     # Запишем описание задания в MemoryStorage
     await state.update_data(description=message.text)
@@ -170,6 +181,7 @@ def register_student_send_answer(dp: Dispatcher):
     # state handlers
     dp.message.register(select_teacher, SendAnswerStudent.study_subject)
     dp.message.register(select_task_name, SendAnswerStudent.teacher_full_name)
+    dp.message.register(request_description_external, Command('send_answer', ignore_case=True), SendAnswerStudent.task_name)
     dp.message.register(request_description, SendAnswerStudent.task_name)
     dp.message.register(send_answer, SendAnswerStudent.description)
     dp.message.register(upload_files, SendAnswerStudent.upload_file)

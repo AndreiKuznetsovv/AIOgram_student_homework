@@ -84,15 +84,12 @@ async def select_task_name(message: types.Message, state: FSMContext):
 
 
 async def show_all_answers(message: types.Message, state: FSMContext):
-    # проверим, существует ли задание с таким названием
-    task = db_session.query(Task).filter_by(name=message.text.lower()).first()
-    if task:
-        # Добавим в MemoryStorage название задания
-        await state.update_data(task_name=message.text.lower())
+    # Добавим в MemoryStorage название задания
+    await state.update_data(task_name=message.text.lower())
 
-        # Получим из MemoryStorage данные о задании
-        task_data = await state.get_data()
-
+    # Получим из MemoryStorage данные о задании
+    task_data = await state.get_data()
+    try:
         # получим выбранные ответы на задание из БД
         answers = db_session.query(Task).filter_by(
             group_id=task_data['group_id'],
@@ -100,31 +97,34 @@ async def show_all_answers(message: types.Message, state: FSMContext):
             teacher_id=task_data['teacher_id'],
             name=task_data['task_name'],
         ).first().answers
-
-        # Получим ФИО тех, кто прислал ответ и отправим преподавателю
-        students_full_names = {str(answer.student.id): answer.student.user.full_name for answer in answers}
-        # Запишем полученный словарь в MemoryStorage
-        await state.update_data(students_full_names=students_full_names)
-
-        serialized_answer = "Список студентов, которые отправили ответ, в формате\n" \
-                            "ФИО студента: количество отправленных ответов\n" \
-                            "----------------------------------------------------------------------------\n"
-        for full_name, count in Counter([answer.student.user.full_name for answer in answers]).items():
-            serialized_answer += f"{full_name}: {count}\n"
-        await message.answer(
-            text=f"{serialized_answer}"
-        )
-
-        # Установим состояние пользователю и запросим ввести ФИО студента
-        await state.set_state(RateAnswerTeacher.student_name)
-        await message.answer(
-            text="Введите ФИО студента, чьи ответы хотите оценить."
-        )
-    else:
+    except AttributeError:
         await message.answer(
             text="Задания с таким названием не существует.\n"
                  "Попробуйте еще раз."
         )
+        return
+
+    # Запишем ответы в MemoryStorage
+    await state.update_data(answers=answers)
+    # Получим ФИО тех, кто прислал ответ и отправим преподавателю
+    students_ids_names = {str(answer.student.id): answer.student.user.full_name for answer in answers}
+    # Запишем полученный словарь в MemoryStorage
+    await state.update_data(students_ids_names=students_ids_names)
+
+    serialized_answer = "Список студентов, которые отправили ответ, в формате\n" \
+                        "ФИО студента: количество отправленных ответов\n" \
+                        "----------------------------------------------------------------------------\n"
+    for full_name, count in Counter([answer.student.user.full_name for answer in answers]).items():
+        serialized_answer += f"{full_name}: {count}\n"
+    await message.answer(
+        text=f"{serialized_answer}"
+    )
+
+    # Установим состояние пользователю и запросим ввести ФИО студента
+    await state.set_state(RateAnswerTeacher.student_name)
+    await message.answer(
+        text="Введите ФИО студента, чьи ответы хотите оценить."
+    )
 
 
 def register_teacher_get_answers(dp: Dispatcher):

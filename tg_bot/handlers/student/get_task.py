@@ -5,13 +5,14 @@ from aiogram.fsm.context import FSMContext
 
 from tg_bot.keyboards.reply import create_cancel_keyboard
 from tg_bot.misc.database import db_session
-from tg_bot.misc.states import GetTaskStudent, SelectRole
+from tg_bot.misc.states import GetTaskStudent, SelectRole, SendAnswerStudent
 from tg_bot.models.models import (
     Task, File, Teacher,
     User, GroupSubject, Subject,
     TeacherSubject, TaskFile,
 )
 
+from aiogram import html
 
 async def select_subject(message: types.Message, state: FSMContext):
     # Установим состояние и запросим название предмета
@@ -96,10 +97,8 @@ async def show_selected_task(message: types.Message, state: FSMContext):
         teacher_id=task_data['teacher_id'],
         name=task_data['task_name'],
     ).first()
-
     # получим прикрепленные к заданию файлы
     task_files = db_session.query(File).join(TaskFile).filter(TaskFile.task_id == selected_task.id).all()
-
     # если файлов > 1 отправляем группу документов, иначе 1 документ
     if len(task_files) > 1:
         # преобразуем полученный список объектов класса File в список документов
@@ -114,13 +113,18 @@ async def show_selected_task(message: types.Message, state: FSMContext):
             caption=f"Описание работы: {selected_task.description}"
         )
 
-    # очистим состояние пользователя
-    await state.clear()
+    # Запишем task_id в MemoryStorage
+    await state.update_data(task_id=selected_task.id)
+    await state.set_state(SendAnswerStudent.task_name)
+    await message.answer(
+        text=html.italic(f"Чтобы отправить ответ на {html.bold('данное')} задание,"
+                         f" введите команду {html.bold('/send_answer')}")
+    )
 
 
 def register_student_select_task(dp: Dispatcher):
     # Command handlers
-    dp.message.register(select_subject, Command('select_task', ignore_case=True), SelectRole.student)
+    dp.message.register(select_subject, Command('get_task', ignore_case=True), SelectRole.student)
     # state handlers
     dp.message.register(select_teacher, GetTaskStudent.study_subject)
     dp.message.register(select_task_name, GetTaskStudent.teacher_full_name)

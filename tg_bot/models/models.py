@@ -195,7 +195,7 @@ class Mark(Base):
     __tablename__ = "marks"
 
     id = Column(Integer, primary_key=True)
-    mark = Column(Integer, nullable=False)
+    mark_value = Column(Integer, nullable=False)
     description = Column(String(255), nullable=True)
     # foreign key
     answer_id = Column(Integer, ForeignKey('answers.id', ondelete='CASCADE'), nullable=False)
