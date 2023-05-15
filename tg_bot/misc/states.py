@@ -33,7 +33,10 @@ class GetAnswersTeacher(StatesGroup):
 
 
 class RateAnswerTeacher(StatesGroup):
-    pass
+    student_name = State()
+    rate_answer = State()
+    description = State()
+
 
 '''
 Student StateGroup classes

@@ -11,6 +11,7 @@ from tg_bot.handlers.student.send_answer import register_student_send_answer
 from tg_bot.handlers.teacher.add_task import register_teacher_add_task
 from tg_bot.handlers.teacher.register import register_teacher
 from tg_bot.handlers.teacher.get_answers import register_teacher_get_answers
+from tg_bot.handlers.teacher.rate_answer import register_teacher_rate_answer
 from tg_bot.misc.database import db_init
 
 
@@ -19,6 +20,7 @@ def register_all_handlers(dp: Dispatcher):
     register_teacher(dp)
     register_teacher_add_task(dp)
     register_teacher_get_answers(dp)
+    register_teacher_rate_answer(dp)
     register_student(dp)
     register_student_select_task(dp)
     register_student_send_answer(dp)
