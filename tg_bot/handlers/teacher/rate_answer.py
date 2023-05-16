@@ -3,6 +3,7 @@ from aiogram import html
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
+from tg_bot.keyboards.reply.general import reply_cancel_kb
 from tg_bot.misc.database import db_session, db_add_func
 from tg_bot.misc.states import RateAnswerTeacher
 from tg_bot.models.models import (
@@ -105,7 +106,8 @@ async def rate_description(message: types.Message, state: FSMContext):
     await message.answer(
         text='Ответ успешно оценен!\n'
              'Можете ввести ФИО следующего студента, чей ответ хотите оценить.\n'
-             'Или ввести /cancel чтобы закончить оценивание работ.'
+             'Или ввести /cancel чтобы закончить оценивание работ.',
+        reply_markup=reply_cancel_kb()
     )
 
 

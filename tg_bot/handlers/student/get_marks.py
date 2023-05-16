@@ -4,7 +4,6 @@ from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from tg_bot.keyboards.reply import create_cancel_keyboard
 from tg_bot.misc.database import db_session
 from tg_bot.misc.states import SelectRole, GetMarkStudent
 from tg_bot.models.models import (
@@ -19,7 +18,7 @@ async def select_subject(message: types.Message, state: FSMContext):
     await state.set_state(GetMarkStudent.study_subject)
     await message.answer(
         text="Введите название предмета.",
-        reply_markup=create_cancel_keyboard()
+        reply_markup=None
     )
 
 
@@ -68,7 +67,7 @@ async def select_task_name(message: types.Message, state: FSMContext):
             await state.set_state(GetMarkStudent.task_name)
             await message.answer(
                 text="Введите название задания.",
-                reply_markup=create_cancel_keyboard()  # Добавить клавиатуру для выбора группы
+                reply_markup=None  # Добавить клавиатуру для выбора группы
             )
         else:
             await message.answer(

@@ -5,7 +5,6 @@ from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from tg_bot.keyboards.reply import create_cancel_keyboard
 from tg_bot.misc.database import db_session
 from tg_bot.misc.states import SelectRole, GetAnswersTeacher, RateAnswerTeacher
 from tg_bot.models.models import (
@@ -18,7 +17,7 @@ async def select_subject(message: types.Message, state: FSMContext):
     await state.set_state(GetAnswersTeacher.study_subject)
     await message.answer(
         text="Введите название предмета.",
-        reply_markup=create_cancel_keyboard()
+        reply_markup=None
     )
 
 
@@ -39,7 +38,7 @@ async def select_group(message: types.Message, state: FSMContext):
         await state.set_state(GetAnswersTeacher.study_group)
         await message.answer(
             text="Введите название группы, ответы которой вы хотите получить.",
-            reply_markup=create_cancel_keyboard()
+            reply_markup=None
         )
     else:
         await message.answer(
@@ -113,9 +112,10 @@ async def show_all_answers(message: types.Message, state: FSMContext):
 
     serialized_answer = "Список студентов, которые отправили ответ, в формате\n" \
                         "ФИО студента: количество отправленных ответов\n" \
-                        "----------------------------------------------------------------------------\n" \
-                        "<hr>"
+                        "----------------------------------------------------------------------------\n"
     for full_name, count in Counter([answer.student.user.full_name for answer in answers]).items():
+        # Переведем первые буквы ФИО в верхний регистр
+        full_name = ' '.join([name.capitalize() for name in full_name.split(' ')])
         serialized_answer += f"{full_name}: {count}\n"
     await message.answer(
         text=f"{serialized_answer}"

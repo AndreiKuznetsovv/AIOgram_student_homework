@@ -3,6 +3,7 @@ from aiogram import types
 from aiogram.fsm.context import FSMContext
 
 from tg_bot.config import load_config
+from tg_bot.keyboards.reply.teacher import reply_teacher_kb
 from tg_bot.misc.database import db_add_func, db_session
 from tg_bot.misc.states import RegisterTeacher, SelectRole
 from tg_bot.models.models import Teacher, User
@@ -52,18 +53,14 @@ async def upload_teacher(message: types.Message, state: FSMContext):
 
         # установка состояния преподавателя
         await state.set_state(SelectRole.teacher)
+        await message.answer(
+            text="Регистрация прошла успешно!\n"
+                 "Можете приступать к работе с заданиями!",
+            reply_markup=reply_teacher_kb()
+        )
 
         # Запишем id преподавателя из базы данных в MemoryStorage
         await state.update_data(teacher_id=new_teacher.id)
-
-        # вывод данных на экран для теста
-        serialized_answer = ""
-        for key, value in teacher_data.items():
-            serialized_answer += f"{key}: {value}\n"
-        await message.answer(
-            text=f"Преподаватель успешно добавлен!\n"
-                 f"{serialized_answer}"
-        )
     else:
         # ФИО состоит не из трёх слов
         await message.answer(

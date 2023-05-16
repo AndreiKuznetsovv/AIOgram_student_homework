@@ -3,7 +3,7 @@ from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from tg_bot.keyboards.reply import create_cancel_keyboard
+from tg_bot.keyboards.reply.general import reply_cancel_kb
 from tg_bot.misc.database import db_session, db_add_func
 from tg_bot.misc.states import SendAnswerStudent, SelectRole
 from tg_bot.models.models import (
@@ -18,7 +18,7 @@ async def select_subject(message: types.Message, state: FSMContext):
     await state.set_state(SendAnswerStudent.study_subject)
     await message.answer(
         text="Введите название предмета.",
-        reply_markup=create_cancel_keyboard()
+        reply_markup=None
     )
 
 
@@ -67,7 +67,7 @@ async def select_task_name(message: types.Message, state: FSMContext):
             await state.set_state(SendAnswerStudent.task_name)
             await message.answer(
                 text="Введите название задания.",
-                reply_markup=create_cancel_keyboard()  # Добавить клавиатуру для выбора группы
+                reply_markup=None
             )
         else:
             await message.answer(
@@ -103,6 +103,8 @@ async def request_description(message: types.Message, state: FSMContext):
 '''
 Обработчик перехода из get_task
 '''
+
+
 async def request_description_external(message: types.Message, state: FSMContext):
     # Установим состояние и запросим описание ответа на задание
     await state.set_state(SendAnswerStudent.description)
@@ -136,15 +138,9 @@ async def send_answer(message: types.Message, state: FSMContext):
     await state.set_state(SendAnswerStudent.upload_file)
     await message.answer(
         text='Ответ на задание успешно добавлен!\n'
-             'Теперь добавьте файлы к вашему ответу.'
-    )
-
-    # вывод данных на экран для теста
-    serialized_answer = ""
-    for key, value in answer_data.items():
-        serialized_answer += f"{key}: {value}\n"
-    await message.answer(
-        text=f"{serialized_answer}"
+             'Теперь добавьте файлы к вашему ответу.\n'
+             'Или введите команду /cancel чтобы не добавлять файлы.',
+        reply_markup=reply_cancel_kb()
     )
 
 
@@ -171,7 +167,7 @@ async def upload_files(message: types.Message, state: FSMContext):
         text='Файл успешно добавлен!\n'
              'Вы можете продолжить добавление файлов!\n'
              'Или ввести команду /cancel чтобы закончить добавление файлов.',
-        reply_markup=None  # reply клавиатура с командой cancel
+        reply_markup=reply_cancel_kb()
     )
 
 
@@ -181,7 +177,8 @@ def register_student_send_answer(dp: Dispatcher):
     # state handlers
     dp.message.register(select_teacher, SendAnswerStudent.study_subject)
     dp.message.register(select_task_name, SendAnswerStudent.teacher_full_name)
-    dp.message.register(request_description_external, Command('send_answer', ignore_case=True), SendAnswerStudent.task_name)
+    dp.message.register(request_description_external, Command('send_answer', ignore_case=True),
+                        SendAnswerStudent.task_name)
     dp.message.register(request_description, SendAnswerStudent.task_name)
     dp.message.register(send_answer, SendAnswerStudent.description)
     dp.message.register(upload_files, SendAnswerStudent.upload_file)

@@ -2,6 +2,7 @@ from aiogram import Dispatcher
 from aiogram import types
 from aiogram.fsm.context import FSMContext
 
+from tg_bot.keyboards.reply.student import reply_student_kb
 from tg_bot.misc.database import db_add_func, db_session
 from tg_bot.misc.states import SelectRole, RegisterStudent
 from tg_bot.models.models import Student, User, Group
@@ -14,7 +15,7 @@ async def check_student_fullname(message: types.Message, state: FSMContext):
         await state.update_data(full_name=message.text.lower())
         await state.set_state(RegisterStudent.student_study_group)
         await message.answer(
-            text="Тебе введите группу, в который вы обучаетесь.\n"
+            text="Теперь введите группу, в который вы обучаетесь.\n"
         )
     else:
         # ФИО состоит не из трёх слов
@@ -50,15 +51,18 @@ async def check_student_group(message: types.Message, state: FSMContext):
             db_add_func(new_student)
         # Запишем id студента из базы данных в MemoryStorage
         await state.update_data(student_id=new_student.id)
-        # установка состояния студента
+        # установка состояния студента и отправка сообщения об удачной регистрации
         await state.set_state(SelectRole.student)
-        # вывод данных на экран для теста
-        serialized_answer = ""
-        for key, value in student_data.items():
-            serialized_answer += f"{key}: {value}\n"
         await message.answer(
-            text=f"Студент успешно добавлен!\n"
-                 f"{serialized_answer}"
+            text="Регистрация прошла успешно!\n"
+                 "Можете приступать к работе с заданиями!",
+            reply_markup=reply_student_kb()
+        )
+    else:
+        await message.answer(
+            text="Вы ввели неверное название группы.\n"
+                 "Оно должно состоять из 2-ух словах, разделенных тире.\n"
+                 "Попробуйте еще раз."
         )
 
 

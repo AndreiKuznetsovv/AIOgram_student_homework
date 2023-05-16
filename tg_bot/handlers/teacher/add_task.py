@@ -3,7 +3,7 @@ from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 
-from tg_bot.keyboards.reply import create_cancel_keyboard
+from tg_bot.keyboards.reply.general import reply_cancel_kb
 from tg_bot.misc.database import db_add_func, db_session
 from tg_bot.misc.states import AddTaskTeacher, SelectRole
 from tg_bot.models.models import (
@@ -23,7 +23,7 @@ async def request_subject(message: types.Message, state: FSMContext):
     await state.set_state(AddTaskTeacher.study_subject)
     await message.answer(
         text="Введите название предмета, по которому хотите добавить задание.",
-        reply_markup=create_cancel_keyboard()
+        reply_markup=None
     )
 
 
@@ -45,7 +45,7 @@ async def request_group(message: types.Message, state: FSMContext):
     await state.set_state(AddTaskTeacher.study_group)
     await message.answer(
         text="Введите название группы, для которой вы хотите добавить задание.",
-        reply_markup=create_cancel_keyboard()
+        reply_markup=None
     )
 
 
@@ -116,15 +116,9 @@ async def upload_task(message: types.Message, state: FSMContext):
     await state.set_state(AddTaskTeacher.upload_file)
     await message.answer(
         text='Задание успешно добавлено!\n'
-             'Теперь добавьте файлы к заданию.'
-    )
-
-    # вывод данных на экран для теста
-    serialized_answer = ""
-    for key, value in task_data.items():
-        serialized_answer += f"{key}: {value}\n"
-    await message.answer(
-        text=f"{serialized_answer}"
+             'Теперь добавьте файлы к заданию.\n'
+             'Или введите команду /cancel чтобы не добавлять файлы',
+        reply_markup=reply_cancel_kb()
     )
 
 
@@ -151,7 +145,7 @@ async def upload_files(message: types.Message, state: FSMContext):
         text='Файл успешно добавлен!\n'
              'Вы можете продолжить добавление файлов!\n'
              'Или ввести команду /cancel чтобы закончить добавление файлов.',
-        reply_markup=None  # reply клавиатура с командой cancel
+        reply_markup=reply_cancel_kb()
     )
 
 
