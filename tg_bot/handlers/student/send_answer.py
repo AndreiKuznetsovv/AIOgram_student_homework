@@ -1,7 +1,8 @@
-from aiogram import Dispatcher
+from aiogram import Dispatcher, F
 from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from aiogram.types import ReplyKeyboardRemove
 
 from tg_bot.keyboards.reply.general import reply_cancel_kb
 from tg_bot.misc.database import db_session, db_add_func
@@ -18,7 +19,7 @@ async def select_subject(message: types.Message, state: FSMContext):
     await state.set_state(SendAnswerStudent.study_subject)
     await message.answer(
         text="Введите название предмета.",
-        reply_markup=None
+        reply_markup=ReplyKeyboardRemove()
     )
 
 
@@ -181,4 +182,4 @@ def register_student_send_answer(dp: Dispatcher):
                         SendAnswerStudent.task_name)
     dp.message.register(request_description, SendAnswerStudent.task_name)
     dp.message.register(send_answer, SendAnswerStudent.description)
-    dp.message.register(upload_files, SendAnswerStudent.upload_file)
+    dp.message.register(upload_files, SendAnswerStudent.upload_file, F.document)

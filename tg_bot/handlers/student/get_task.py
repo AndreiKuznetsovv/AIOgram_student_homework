@@ -3,6 +3,7 @@ from aiogram import html
 from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from aiogram.types import ReplyKeyboardRemove
 
 from tg_bot.misc.database import db_session
 from tg_bot.misc.states import GetTaskStudent, SelectRole, SendAnswerStudent
@@ -18,7 +19,7 @@ async def select_subject(message: types.Message, state: FSMContext):
     await state.set_state(GetTaskStudent.study_subject)
     await message.answer(
         text="Введите название предмета.",
-        reply_markup=None
+        reply_markup=ReplyKeyboardRemove()
     )
 
 
@@ -67,7 +68,7 @@ async def select_task_name(message: types.Message, state: FSMContext):
             await state.set_state(GetTaskStudent.task_name)
             await message.answer(
                 text="Введите название задания.",
-                reply_markup=None  # Добавить клавиатуру для выбора группы
+                reply_markup=None
             )
         else:
             await message.answer(

@@ -4,7 +4,9 @@ from aiogram import Dispatcher
 from aiogram import types
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
+from aiogram.types import ReplyKeyboardRemove
 
+from tg_bot.keyboards.reply.teacher import reply_teacher_kb
 from tg_bot.misc.database import db_session
 from tg_bot.misc.states import SelectRole, GetAnswersTeacher, RateAnswerTeacher
 from tg_bot.models.models import (
@@ -17,7 +19,7 @@ async def select_subject(message: types.Message, state: FSMContext):
     await state.set_state(GetAnswersTeacher.study_subject)
     await message.answer(
         text="Введите название предмета.",
-        reply_markup=None
+        reply_markup=ReplyKeyboardRemove()
     )
 
 
@@ -102,30 +104,38 @@ async def show_all_answers(message: types.Message, state: FSMContext):
                  "Попробуйте еще раз."
         )
         return
+    if answers:
+        # Запишем ответы в MemoryStorage
+        await state.update_data(answers=answers)
+        # Получим ФИО тех, кто прислал ответ и отправим преподавателю
+        students_ids_names = {str(answer.student.id): answer.student.user.full_name for answer in answers}
+        # Запишем полученный словарь в MemoryStorage
+        await state.update_data(students_ids_names=students_ids_names)
 
-    # Запишем ответы в MemoryStorage
-    await state.update_data(answers=answers)
-    # Получим ФИО тех, кто прислал ответ и отправим преподавателю
-    students_ids_names = {str(answer.student.id): answer.student.user.full_name for answer in answers}
-    # Запишем полученный словарь в MemoryStorage
-    await state.update_data(students_ids_names=students_ids_names)
+        serialized_answer = "Список студентов, которые отправили ответ, в формате\n" \
+                            "ФИО студента: количество отправленных ответов\n" \
+                            "----------------------------------------------------------------------------\n"
+        for full_name, count in Counter([answer.student.user.full_name for answer in answers]).items():
+            # Переведем первые буквы ФИО в верхний регистр
+            full_name = ' '.join([name.capitalize() for name in full_name.split(' ')])
+            serialized_answer += f"{full_name}: {count}\n"
+        await message.answer(
+            text=f"{serialized_answer}"
+        )
 
-    serialized_answer = "Список студентов, которые отправили ответ, в формате\n" \
-                        "ФИО студента: количество отправленных ответов\n" \
-                        "----------------------------------------------------------------------------\n"
-    for full_name, count in Counter([answer.student.user.full_name for answer in answers]).items():
-        # Переведем первые буквы ФИО в верхний регистр
-        full_name = ' '.join([name.capitalize() for name in full_name.split(' ')])
-        serialized_answer += f"{full_name}: {count}\n"
-    await message.answer(
-        text=f"{serialized_answer}"
-    )
+        # Установим состояние пользователю и запросим ввести ФИО студента
+        await state.set_state(RateAnswerTeacher.student_name)
+        await message.answer(
+            text="Введите ФИО студента, чьи ответы хотите оценить."
+        )
+    else:
+        # Если ответов на задание нет вернем пользователя в состояние преподавателя
+        await state.set_state(SelectRole.teacher)
+        await message.answer(
+            text="Студенты еще не отправили ответы на данное задание.",
+            reply_markup=reply_teacher_kb()
+        )
 
-    # Установим состояние пользователю и запросим ввести ФИО студента
-    await state.set_state(RateAnswerTeacher.student_name)
-    await message.answer(
-        text="Введите ФИО студента, чьи ответы хотите оценить."
-    )
 
 
 def register_teacher_get_answers(dp: Dispatcher):

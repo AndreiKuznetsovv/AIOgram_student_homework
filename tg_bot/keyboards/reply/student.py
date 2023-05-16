@@ -11,4 +11,4 @@ def reply_student_kb():
     # устанавливаем кол-во кнопок в ряду
     builder.adjust(2)
     # возвращаем клавиатуру
-    return builder.as_markup(resize_keyboard=True)
+    return builder.as_markup(resize_keyboard=True, one_time_keyboard=True)
