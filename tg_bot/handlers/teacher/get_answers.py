@@ -113,7 +113,8 @@ async def show_all_answers(message: types.Message, state: FSMContext):
 
     serialized_answer = "Список студентов, которые отправили ответ, в формате\n" \
                         "ФИО студента: количество отправленных ответов\n" \
-                        "----------------------------------------------------------------------------\n"
+                        "----------------------------------------------------------------------------\n" \
+                        "<hr>"
     for full_name, count in Counter([answer.student.user.full_name for answer in answers]).items():
         serialized_answer += f"{full_name}: {count}\n"
     await message.answer(

@@ -60,3 +60,9 @@ class SendAnswerStudent(StatesGroup):
     task_name = State()
     description = State()
     upload_file = State()
+
+
+class GetMarkStudent(StatesGroup):
+    study_subject = State()
+    teacher_full_name = State()
+    task_name = State()
